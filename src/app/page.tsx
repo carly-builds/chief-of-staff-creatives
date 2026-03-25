@@ -1,101 +1,140 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import CollageBackground from "@/components/CollageBackground";
+import BottomNav, { TabId } from "@/components/BottomNav";
+import Onboarding, { OnboardingData, ParsedTask } from "@/components/Onboarding";
+import FocusScreen from "@/components/FocusScreen";
+import TodayScreen from "@/components/TodayScreen";
+import WeekScreen from "@/components/WeekScreen";
+import AimsScreen from "@/components/AimsScreen";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [onboarded, setOnboarded] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabId>("focus");
+  const [tasks, setTasks] = useState<ParsedTask[]>([]);
+  const [aims, setAims] = useState<string[]>([]);
+  const [milestones, setMilestones] = useState<Record<string, string>>({});
+  const [completedAims, setCompletedAims] = useState<Set<string>>(new Set());
+  const [oneThing, setOneThing] = useState<ParsedTask | null>(null);
+  const [weekIntention, setWeekIntention] = useState("");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+  if (!onboarded) {
+    return (
+      <main className="max-w-[430px] mx-auto min-h-screen relative overflow-hidden">
+        <CollageBackground />
+        <Onboarding
+          onComplete={(data) => {
+            setTasks(data.parsedTasks);
+            setAims(data.aims);
+            setMilestones(data.milestones);
+            setOnboarded(true);
+            setActiveTab("focus");
+          }}
+        />
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+    );
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  const todayTasks = tasks.filter((t) => t.day === today);
+
+  const addTask = (task: ParsedTask) => {
+    setTasks((prev) => [...prev, task]);
+  };
+
+  const linkTaskToAim = (taskIndex: number, aim: string | null) => {
+    setTasks((prev) =>
+      prev.map((t, i) => (i === taskIndex ? { ...t, aim } : t))
+    );
+  };
+
+  const updateAim = (index: number, newName: string) => {
+    if (!newName.trim()) return;
+    const oldName = aims[index];
+    setAims((prev) => prev.map((a, i) => (i === index ? newName.trim() : a)));
+    // Update tasks that reference the old aim name
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.aim && t.aim.toLowerCase() === oldName.toLowerCase()
+          ? { ...t, aim: newName.trim() }
+          : t
+      )
+    );
+    // Update milestones
+    if (milestones[oldName]) {
+      setMilestones((prev) => {
+        const next = { ...prev };
+        next[newName.trim()] = next[oldName];
+        delete next[oldName];
+        return next;
+      });
+    }
+  };
+
+  const updateMilestone = (aim: string, milestone: string) => {
+    setMilestones((prev) => ({ ...prev, [aim]: milestone }));
+  };
+
+  const addAim = (name: string) => {
+    if (aims.length < 5) {
+      setAims((prev) => [...prev, name]);
+    }
+  };
+
+  const completeAim = (aim: string) => {
+    setCompletedAims((prev) => new Set([...prev, aim]));
+  };
+
+  return (
+    <main className="max-w-[430px] mx-auto min-h-screen relative overflow-hidden">
+      <CollageBackground />
+      <div className="relative z-[2] px-5 pt-7 pb-28">
+        {activeTab === "focus" && (
+          <FocusScreen
+            tasks={todayTasks}
+            oneThing={oneThing}
+            onComplete={(winner) => setOneThing(winner)}
+            onReset={() => setOneThing(null)}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+        )}
+
+        {activeTab === "today" && (
+          <TodayScreen
+            tasks={todayTasks}
+            allTasks={tasks}
+            oneThing={oneThing}
+            aims={aims}
+            onAddTask={addTask}
+            onToggleTask={() => {}}
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
+        )}
+
+        {activeTab === "week" && (
+          <WeekScreen
+            tasks={tasks}
+            aims={aims}
+            weekIntention={weekIntention}
+            onSetIntention={setWeekIntention}
+            onAddTask={addTask}
+            onLinkTaskToAim={linkTaskToAim}
           />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        )}
+
+        {activeTab === "aims" && (
+          <AimsScreen
+            aims={aims}
+            milestones={milestones}
+            tasks={tasks}
+            completedAims={completedAims}
+            onUpdateAim={updateAim}
+            onUpdateMilestone={updateMilestone}
+            onAddAim={addAim}
+            onCompleteAim={completeAim}
+          />
+        )}
+      </div>
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+    </main>
   );
 }
