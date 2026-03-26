@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 
 export type ParsedTask = {
   title: string;
@@ -47,6 +47,7 @@ export default function Onboarding({
   });
   const [isParsing, setIsParsing] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
 
   const next = () => setStep((s) => Math.min(s + 1, totalSteps + 1));
@@ -78,8 +79,8 @@ export default function Onboarding({
       return;
     }
 
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       alert("Voice input isn't supported in this browser.");
@@ -93,20 +94,18 @@ export default function Onboarding({
 
     let finalTranscript = data.tasks;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
-      let interim = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
           finalTranscript += (finalTranscript ? "\n" : "") + transcript.trim();
           setData((d) => ({ ...d, tasks: finalTranscript }));
-        } else {
-          interim = transcript;
         }
       }
     };
 
-    recognition.onerror = () => setIsListening(false);
+    recognition.onerror = () => { setIsListening(false); };
     recognition.onend = () => setIsListening(false);
 
     recognition.start();

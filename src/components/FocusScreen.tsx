@@ -32,7 +32,7 @@ export default function FocusScreen({
   onReset: () => void;
 }) {
   const [bracket, setBracket] = useState<ParsedTask[]>([]);
-  const [round, setRound] = useState(0);
+  const [, setRound] = useState(0);
   const [matchIndex, setMatchIndex] = useState(0);
   const [winners, setWinners] = useState<ParsedTask[]>([]);
   const [animDir, setAnimDir] = useState<"left" | "right" | null>(null);
@@ -72,7 +72,7 @@ export default function FocusScreen({
         setWinners(newWinners);
       } else {
         // Handle odd one out (bye)
-        let roundWinners = [...newWinners];
+        const roundWinners = [...newWinners];
         if (bracket.length % 2 === 1) {
           roundWinners.push(bracket[bracket.length - 1]);
         }

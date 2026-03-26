@@ -3,7 +3,7 @@
 import { useState } from "react";
 import CollageBackground from "@/components/CollageBackground";
 import BottomNav, { TabId } from "@/components/BottomNav";
-import Onboarding, { OnboardingData, ParsedTask } from "@/components/Onboarding";
+import Onboarding, { ParsedTask } from "@/components/Onboarding";
 import FocusScreen from "@/components/FocusScreen";
 import TodayScreen from "@/components/TodayScreen";
 import WeekScreen from "@/components/WeekScreen";
@@ -83,7 +83,7 @@ export default function Home() {
   };
 
   const completeAim = (aim: string) => {
-    setCompletedAims((prev) => new Set([...prev, aim]));
+    setCompletedAims((prev) => { const next = new Set(prev); next.add(aim); return next; });
   };
 
   return (
@@ -102,11 +102,9 @@ export default function Home() {
         {activeTab === "today" && (
           <TodayScreen
             tasks={todayTasks}
-            allTasks={tasks}
             oneThing={oneThing}
             aims={aims}
             onAddTask={addTask}
-            onToggleTask={() => {}}
           />
         )}
 

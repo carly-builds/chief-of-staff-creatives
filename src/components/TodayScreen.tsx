@@ -11,18 +11,14 @@ const typeDot: Record<string, string> = {
 
 export default function TodayScreen({
   tasks,
-  allTasks,
   oneThing,
   aims,
   onAddTask,
-  onToggleTask,
 }: {
   tasks: ParsedTask[];
-  allTasks: ParsedTask[];
   oneThing: ParsedTask | null;
   aims: string[];
   onAddTask: (task: ParsedTask) => void;
-  onToggleTask: (index: number) => void;
 }) {
   const [input, setInput] = useState("");
   const [isAdding, setIsAdding] = useState(false);

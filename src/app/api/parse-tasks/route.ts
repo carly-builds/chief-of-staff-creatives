@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     }
 
     const aimsContext = aims
-      .map((a: string, i: number) => `- ${a}${milestones[a] ? ` (goal: ${milestones[a]})` : ""}`)
+      .map((a: string) => `- ${a}${milestones[a] ? ` (goal: ${milestones[a]})` : ""}`)
       .join("\n");
 
     const message = await client.messages.create({
@@ -72,10 +72,11 @@ Rules:
     const parsed = JSON.parse(text);
 
     return NextResponse.json(parsed);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Parse tasks error:", err);
+    const message = err instanceof Error ? err.message : "Failed to parse tasks";
     return NextResponse.json(
-      { error: err.message || "Failed to parse tasks" },
+      { error: message },
       { status: 500 }
     );
   }

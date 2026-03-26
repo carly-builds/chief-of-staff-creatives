@@ -69,7 +69,7 @@ export default function AimsScreen({
 
       {/* Active aims */}
       <div className="space-y-4">
-        {activeAims.map((aim, _i) => {
+        {activeAims.map((aim) => {
           const globalIndex = aims.indexOf(aim);
           const relatedTasks = tasks.filter(
             (t) => t.aim && t.aim.toLowerCase() === aim.toLowerCase()

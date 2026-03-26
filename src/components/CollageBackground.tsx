@@ -211,9 +211,9 @@ export default function CollageBackground() {
               background: blob.color,
               opacity: blob.opacity,
               top: blob.top,
-              right: (blob as any).right,
-              bottom: (blob as any).bottom,
-              left: (blob as any).left,
+              right: (blob as Record<string, unknown>).right as number | undefined,
+              bottom: (blob as Record<string, unknown>).bottom as number | undefined,
+              left: (blob as Record<string, unknown>).left as number | undefined,
               animation: blob.animation,
             }}
           />
