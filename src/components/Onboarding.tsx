@@ -15,6 +15,7 @@ export type ParsedTask = {
 export type CalendarEvent = {
   title: string;
   time: string;
+  endTime: string;
   day: string;
 };
 

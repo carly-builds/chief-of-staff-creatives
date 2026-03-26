@@ -29,49 +29,57 @@ function buildDemoData() {
   const todayIdx = dates.indexOf(today);
   const d = (offset: number) => dates[Math.max(0, Math.min(6, todayIdx + offset))];
 
-  const aims = ["Finish my EP", "Launch Substack", "Book 5 freelance clients"];
+  const aims = ["Launch the course", "Grow newsletter to 2K", "Land 3 brand deals"];
 
   const milestones: Record<string, string> = {
-    "Finish my EP": "Mix and master 4 tracks by end of month",
-    "Launch Substack": "First 3 posts written, landing page live",
-    "Book 5 freelance clients": "Send 10 cold emails, 3 discovery calls booked",
+    "Launch the course": "Sales page live, 3 modules filmed, email sequence written",
+    "Grow newsletter to 2K": "Post weekly, optimize signup page, 2 collabs",
+    "Land 3 brand deals": "Pitch 10 brands, media kit updated, 1 signed",
   };
 
   const tasks: ParsedTask[] = [
-    { title: "Record vocals for track 3", day: d(0), aim: "Finish my EP", type: "focus" },
-    { title: "Write Substack post #2", day: d(0), aim: "Launch Substack", type: "focus" },
-    { title: "Reply to Maia about collab", day: d(0), aim: null, type: "flow" },
-    { title: "Send invoice to Blue Room Studio", day: d(0), aim: null, type: "admin" },
-    { title: "Mix track 1 with Jake", day: d(1), aim: "Finish my EP", type: "focus" },
-    { title: "Design Substack landing page", day: d(1), aim: "Launch Substack", type: "flow" },
-    { title: "Cold email 5 potential clients", day: d(1), aim: "Book 5 freelance clients", type: "focus" },
-    { title: "Studio session - track 4 drums", day: d(2), aim: "Finish my EP", type: "focus" },
-    { title: "Post Instagram reel from session", day: d(2), aim: null, type: "flow" },
-    { title: "Discovery call with Nora", day: d(2), aim: "Book 5 freelance clients", type: "flow" },
-    { title: "Write Substack post #3", day: d(3), aim: "Launch Substack", type: "focus" },
-    { title: "Follow up with Sarah re: collab", day: d(3), aim: null, type: "admin" },
-    { title: "Review final mix - tracks 1 & 2", day: d(4), aim: "Finish my EP", type: "focus" },
-    { title: "Send proposal to Loom Studio", day: d(4), aim: "Book 5 freelance clients", type: "flow" },
-    { title: "Brainstorm EP artwork", day: d(-1), aim: "Finish my EP", type: "flow" },
-    { title: "Set up Substack account", day: d(-1), aim: "Launch Substack", type: "admin" },
+    // Today
+    { title: "Film module 2 intro", day: d(0), aim: "Launch the course", type: "focus" },
+    { title: "Write this week's newsletter", day: d(0), aim: "Grow newsletter to 2K", type: "focus" },
+    { title: "Reply to brand pitch from Notion", day: d(0), aim: "Land 3 brand deals", type: "flow" },
+    { title: "Send overdue invoices", day: d(0), aim: null, type: "admin" },
+    // Tomorrow
+    { title: "Edit module 1 video", day: d(1), aim: "Launch the course", type: "focus" },
+    { title: "Design newsletter signup page", day: d(1), aim: "Grow newsletter to 2K", type: "flow" },
+    { title: "Prep for discovery call with Loom", day: d(1), aim: "Land 3 brand deals", type: "flow" },
+    // Day after
+    { title: "Write course sales page copy", day: d(2), aim: "Launch the course", type: "focus" },
+    { title: "Instagram carousel - 5 tips post", day: d(2), aim: "Grow newsletter to 2K", type: "flow" },
+    { title: "Follow up with Canva partnership", day: d(2), aim: "Land 3 brand deals", type: "admin" },
+    // 3 days out
+    { title: "Film module 3", day: d(3), aim: "Launch the course", type: "focus" },
+    { title: "Reach out to 3 newsletter collabs", day: d(3), aim: "Grow newsletter to 2K", type: "flow" },
+    // 4 days out
+    { title: "Review sales page with mentor", day: d(4), aim: "Launch the course", type: "focus" },
+    { title: "Update media kit with new stats", day: d(4), aim: "Land 3 brand deals", type: "admin" },
+    // Yesterday (past)
+    { title: "Outline module 2 content", day: d(-1), aim: "Launch the course", type: "focus" },
+    { title: "Schedule newsletter for next week", day: d(-1), aim: "Grow newsletter to 2K", type: "admin" },
   ];
 
   const events: CalendarEvent[] = [
     // Today
-    { title: "Studio session with Jake", time: "10:00 AM", day: d(0) },
-    { title: "Vocal coach - warm up", time: "1:30 PM", day: d(0) },
-    { title: "Coffee with Maia", time: "4:00 PM", day: d(0) },
+    { title: "Content batching block", time: "9:00 AM", endTime: "11:30 AM", day: d(0) },
+    { title: "Client call - Sarah", time: "12:00 PM", endTime: "12:45 PM", day: d(0) },
+    { title: "Coworking with Jess", time: "2:00 PM", endTime: "5:00 PM", day: d(0) },
     // Tomorrow
-    { title: "Mixing session - Blue Room", time: "11:00 AM", day: d(1) },
-    { title: "Yoga", time: "7:00 AM", day: d(1) },
+    { title: "Gym", time: "7:00 AM", endTime: "8:00 AM", day: d(1) },
+    { title: "Discovery call - Loom", time: "11:00 AM", endTime: "11:30 AM", day: d(1) },
+    { title: "Video editing block", time: "1:00 PM", endTime: "4:00 PM", day: d(1) },
     // Day after
-    { title: "Discovery call - Nora", time: "2:00 PM", day: d(2) },
-    { title: "Drum recording session", time: "10:00 AM", day: d(2) },
+    { title: "Writing block", time: "9:00 AM", endTime: "12:00 PM", day: d(2) },
+    { title: "Lunch with Alex", time: "12:30 PM", endTime: "1:30 PM", day: d(2) },
     // 3 days out
-    { title: "Writing block", time: "9:00 AM", day: d(3) },
+    { title: "Filming block", time: "10:00 AM", endTime: "2:00 PM", day: d(3) },
+    { title: "Therapy", time: "4:00 PM", endTime: "5:00 PM", day: d(3) },
     // 4 days out
-    { title: "Final listen - tracks 1 & 2", time: "3:00 PM", day: d(4) },
-    { title: "Portfolio review with mentor", time: "11:00 AM", day: d(4) },
+    { title: "Mentor session", time: "11:00 AM", endTime: "12:00 PM", day: d(4) },
+    { title: "Free afternoon", time: "1:00 PM", endTime: "5:00 PM", day: d(4) },
   ];
 
   return { aims, milestones, tasks, events };
@@ -86,7 +94,7 @@ export default function DemoPage() {
   const [events] = useState(demo.events);
   const [completedAims] = useState<Set<string>>(new Set());
   const [oneThing, setOneThing] = useState<ParsedTask | null>(null);
-  const [weekIntention, setWeekIntention] = useState("This is the week I finish tracking vocals.");
+  const [weekIntention, setWeekIntention] = useState("This is the week I finish module 2 and get the sales page up.");
 
   const today = new Date().toISOString().split("T")[0];
   const todayTasks = tasks.filter((t) => t.day === today);
