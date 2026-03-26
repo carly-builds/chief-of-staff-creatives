@@ -17,7 +17,7 @@ export default function BottomNav({
   onTabChange: (tab: TabId) => void;
 }) {
   return (
-    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-10 bg-white/80 backdrop-blur-xl border-t border-white/50 flex justify-around py-3 pb-7">
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-10 flex justify-around py-3 pb-7 transition-colors duration-400" style={{ background: "var(--nav-bg)", borderTop: "1px solid var(--nav-border)" }}>
       {tabs.map((tab) => (
         <button
           key={tab.id}

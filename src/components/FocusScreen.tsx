@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
+import { usePalette } from "@/lib/PaletteContext";
 import { ParsedTask } from "./Onboarding";
 
 const typeDot: Record<string, string> = {
@@ -92,40 +93,20 @@ export default function FocusScreen({
     }, 350);
   };
 
+  const { palette } = usePalette();
+
   // Fire confetti when one thing is found
   const confettiFired = useRef(false);
   useEffect(() => {
     if (oneThing && !confettiFired.current) {
       confettiFired.current = true;
-      // First burst
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ["#f2b8c6", "#9dcde3", "#f8d5de", "#c5e3ee", "#dceef5"],
-      });
-      // Second burst slightly delayed
-      setTimeout(() => {
-        confetti({
-          particleCount: 50,
-          spread: 90,
-          origin: { y: 0.5, x: 0.4 },
-          colors: ["#f2b8c6", "#9dcde3", "#f8d5de", "#c5e3ee"],
-        });
-      }, 200);
-      setTimeout(() => {
-        confetti({
-          particleCount: 40,
-          spread: 80,
-          origin: { y: 0.55, x: 0.6 },
-          colors: ["#f2b8c6", "#9dcde3", "#dceef5"],
-        });
-      }, 400);
+      const colors = palette.confetti;
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors });
+      setTimeout(() => { confetti({ particleCount: 50, spread: 90, origin: { y: 0.5, x: 0.4 }, colors }); }, 200);
+      setTimeout(() => { confetti({ particleCount: 40, spread: 80, origin: { y: 0.55, x: 0.6 }, colors }); }, 400);
     }
-    if (!oneThing) {
-      confettiFired.current = false;
-    }
-  }, [oneThing]);
+    if (!oneThing) { confettiFired.current = false; }
+  }, [oneThing, palette.confetti]);
 
   // === ONE THING FOUND ===
   if (oneThing) {

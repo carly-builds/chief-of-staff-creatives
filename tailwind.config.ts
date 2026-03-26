@@ -9,15 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        pink: "#f2b8c6",
-        "pink-light": "#f8d5de",
-        blue: "#9dcde3",
-        "blue-light": "#c5e3ee",
-        "blue-pale": "#dceef5",
-        marble: "#e8e4e0",
-        ink: "#2a2528",
-        "ink-soft": "rgba(42, 37, 40, 0.45)",
-        "ink-faint": "rgba(42, 37, 40, 0.18)",
+        pink: "var(--pink)",
+        "pink-light": "var(--pink-light)",
+        blue: "var(--blue)",
+        "blue-light": "var(--blue-light)",
+        "blue-pale": "var(--blue-pale)",
+        marble: "var(--marble)",
+        ink: "var(--surface-text)",
       },
       fontFamily: {
         display: ['"Ibarra Real Nova"', "serif"],

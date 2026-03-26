@@ -3,13 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --pink: #f2b8c6;
-  --pink-light: #f8d5de;
-  --blue: #9dcde3;
-  --blue-light: #c5e3ee;
-  --blue-pale: #dceef5;
-  --marble: #e8e4e0;
-  --ink: #2a2528;
+  --pink: #c44f8a;
+  --pink-light: #d98aaf;
+  --blue: #d4a9a0;
+  --blue-light: #e2c4bd;
+  --blue-pale: #edd8d3;
+  --marble: #ebe6e2;
+  --ink: #1a1419;
+
+  --surface-bg: #ebe6e2;
+  --surface-card: rgba(255, 255, 255, 0.75);
+  --surface-card-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+  --surface-text: #1a1419;
+  --surface-soft: rgba(26, 20, 25, 0.45);
+  --surface-faint: rgba(26, 20, 25, 0.18);
+  --surface-border: rgba(0, 0, 0, 0.04);
+  --nav-bg: #ebe6e2;
+  --nav-border: rgba(0, 0, 0, 0.04);
 }
 
 * {
@@ -17,17 +27,18 @@
 }
 
 body {
-  color: var(--ink);
-  background: var(--marble);
+  color: var(--surface-text);
+  background: var(--surface-bg);
   font-family: "Libre Franklin", sans-serif;
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.4s ease, color 0.4s ease;
 }
 
 h1, h2, h3, h4 {
   font-family: "Ibarra Real Nova", serif;
-  color: var(--ink);
+  color: var(--surface-text);
   font-weight: 400;
 }
 
@@ -38,13 +49,12 @@ h1, h2, h3, h4 {
   font-size: 0.6rem;
 }
 
-/* Glass card base */
+/* Card base — paper card */
 .glass {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 24px rgba(42, 37, 40, 0.04);
+  background: var(--surface-card);
+  border: none;
+  box-shadow: var(--surface-card-shadow);
+  transition: background 0.4s ease, box-shadow 0.4s ease;
 }
 
 /* Animations */

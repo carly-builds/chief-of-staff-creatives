@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { PaletteProvider } from "@/lib/PaletteContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,7 +35,9 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        {children}
+        <PaletteProvider>
+          {children}
+        </PaletteProvider>
       </body>
     </html>
   );
