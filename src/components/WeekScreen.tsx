@@ -55,6 +55,7 @@ export default function WeekScreen({
   onSetIntention,
   onAddTask,
   onLinkTaskToAim,
+  onOpenReview,
 }: {
   tasks: ParsedTask[];
   aims: string[];
@@ -62,6 +63,7 @@ export default function WeekScreen({
   onSetIntention: (val: string) => void;
   onAddTask: (task: ParsedTask) => void;
   onLinkTaskToAim: (taskIndex: number, aim: string | null) => void;
+  onOpenReview?: () => void;
 }) {
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0];
@@ -320,6 +322,17 @@ export default function WeekScreen({
           </button>
         </div>
       </div>
+
+      {/* Weekly review button */}
+      {onOpenReview && (
+        <button
+          onClick={onOpenReview}
+          className="glass rounded-2xl p-4 w-full text-center transition-colors hover:bg-white/50"
+        >
+          <div className="font-mono-upper text-[0.48rem] text-pink/50 mb-1 tracking-widest">End of week?</div>
+          <div className="font-display text-[0.92rem] text-ink/60">Review your week</div>
+        </button>
+      )}
     </div>
   );
 }

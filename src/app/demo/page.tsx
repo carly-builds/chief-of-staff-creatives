@@ -8,6 +8,7 @@ import FocusScreen from "@/components/FocusScreen";
 import TodayScreen from "@/components/TodayScreen";
 import WeekScreen from "@/components/WeekScreen";
 import AimsScreen from "@/components/AimsScreen";
+import WeeklyReview from "@/components/WeeklyReview";
 
 function getWeekDates() {
   const today = new Date();
@@ -38,51 +39,51 @@ function buildDemoData() {
   };
 
   const tasks: ParsedTask[] = [
-    // Today
     { title: "Film module 2 intro", day: d(0), aim: "Launch the course", type: "focus" },
     { title: "Write this week's newsletter", day: d(0), aim: "Grow newsletter to 2K", type: "focus" },
     { title: "Reply to brand pitch from Notion", day: d(0), aim: "Land 3 brand deals", type: "flow" },
     { title: "Send overdue invoices", day: d(0), aim: null, type: "admin" },
-    // Tomorrow
     { title: "Edit module 1 video", day: d(1), aim: "Launch the course", type: "focus" },
     { title: "Design newsletter signup page", day: d(1), aim: "Grow newsletter to 2K", type: "flow" },
     { title: "Prep for discovery call with Loom", day: d(1), aim: "Land 3 brand deals", type: "flow" },
-    // Day after
     { title: "Write course sales page copy", day: d(2), aim: "Launch the course", type: "focus" },
     { title: "Instagram carousel - 5 tips post", day: d(2), aim: "Grow newsletter to 2K", type: "flow" },
     { title: "Follow up with Canva partnership", day: d(2), aim: "Land 3 brand deals", type: "admin" },
-    // 3 days out
     { title: "Film module 3", day: d(3), aim: "Launch the course", type: "focus" },
     { title: "Reach out to 3 newsletter collabs", day: d(3), aim: "Grow newsletter to 2K", type: "flow" },
-    // 4 days out
     { title: "Review sales page with mentor", day: d(4), aim: "Launch the course", type: "focus" },
     { title: "Update media kit with new stats", day: d(4), aim: "Land 3 brand deals", type: "admin" },
-    // Yesterday (past)
+    // Past days
     { title: "Outline module 2 content", day: d(-1), aim: "Launch the course", type: "focus" },
-    { title: "Schedule newsletter for next week", day: d(-1), aim: "Grow newsletter to 2K", type: "admin" },
+    { title: "Schedule newsletter for this week", day: d(-1), aim: "Grow newsletter to 2K", type: "admin" },
+    { title: "Research brand deal rates", day: d(-2), aim: "Land 3 brand deals", type: "focus" },
+    { title: "Film module 1", day: d(-2), aim: "Launch the course", type: "focus" },
   ];
 
+  // Pre-completed tasks (past days + some from earlier this week)
+  const completed = new Set([
+    "Outline module 2 content",
+    "Schedule newsletter for this week",
+    "Research brand deal rates",
+    "Film module 1",
+  ]);
+
   const events: CalendarEvent[] = [
-    // Today
     { title: "Content batching block", time: "9:00 AM", endTime: "11:30 AM", day: d(0) },
     { title: "Client call - Sarah", time: "12:00 PM", endTime: "12:45 PM", day: d(0) },
     { title: "Coworking with Jess", time: "2:00 PM", endTime: "5:00 PM", day: d(0) },
-    // Tomorrow
     { title: "Gym", time: "7:00 AM", endTime: "8:00 AM", day: d(1) },
     { title: "Discovery call - Loom", time: "11:00 AM", endTime: "11:30 AM", day: d(1) },
     { title: "Video editing block", time: "1:00 PM", endTime: "4:00 PM", day: d(1) },
-    // Day after
     { title: "Writing block", time: "9:00 AM", endTime: "12:00 PM", day: d(2) },
     { title: "Lunch with Alex", time: "12:30 PM", endTime: "1:30 PM", day: d(2) },
-    // 3 days out
     { title: "Filming block", time: "10:00 AM", endTime: "2:00 PM", day: d(3) },
     { title: "Therapy", time: "4:00 PM", endTime: "5:00 PM", day: d(3) },
-    // 4 days out
     { title: "Mentor session", time: "11:00 AM", endTime: "12:00 PM", day: d(4) },
     { title: "Free afternoon", time: "1:00 PM", endTime: "5:00 PM", day: d(4) },
   ];
 
-  return { aims, milestones, tasks, events };
+  return { aims, milestones, tasks, events, completed };
 }
 
 export default function DemoPage() {
@@ -93,8 +94,10 @@ export default function DemoPage() {
   const [milestones] = useState(demo.milestones);
   const [events] = useState(demo.events);
   const [completedAims] = useState<Set<string>>(new Set());
+  const [completedTasks] = useState<Set<string>>(demo.completed);
   const [oneThing, setOneThing] = useState<ParsedTask | null>(null);
   const [weekIntention, setWeekIntention] = useState("This is the week I finish module 2 and get the sales page up.");
+  const [showReview, setShowReview] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
   const todayTasks = tasks.filter((t) => t.day === today);
@@ -135,6 +138,7 @@ export default function DemoPage() {
             onSetIntention={setWeekIntention}
             onAddTask={addTask}
             onLinkTaskToAim={linkTaskToAim}
+            onOpenReview={() => setShowReview(true)}
           />
         )}
 
@@ -152,6 +156,18 @@ export default function DemoPage() {
         )}
       </div>
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Weekly Review overlay */}
+      {showReview && (
+        <WeeklyReview
+          tasks={tasks}
+          completedTasks={completedTasks}
+          aims={aims}
+          weekIntention={weekIntention}
+          onClose={() => setShowReview(false)}
+          onSetNextIntention={(val) => setWeekIntention(val)}
+        />
+      )}
     </main>
   );
 }
