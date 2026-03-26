@@ -12,6 +12,12 @@ export type ParsedTask = {
   type: "focus" | "flow" | "admin";
 };
 
+export type CalendarEvent = {
+  title: string;
+  time: string;
+  day: string;
+};
+
 export type OnboardingData = {
   aims: string[];
   currentAimInput: string;
