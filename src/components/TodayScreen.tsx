@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { ParsedTask, CalendarEvent } from "./Onboarding";
 
 const typeDot: Record<string, string> = {
@@ -36,66 +36,35 @@ function formatHour(minutes: number): string {
   return `${hour} ${period}`;
 }
 
-type TimelineItem = {
-  type: "event" | "task-slot";
+type Slot = {
+  id: string;
   startMin: number;
   endMin: number;
-  event?: CalendarEvent;
-  tasks?: ParsedTask[];
 };
 
-function buildTimeline(events: CalendarEvent[], tasks: ParsedTask[]): TimelineItem[] {
-  // Sort events by start time
+function buildSlots(events: CalendarEvent[]): { events: (CalendarEvent & { startMin: number; endMin: number })[], slots: Slot[] } {
   const sorted = [...events].sort((a, b) => parseTime(a.time) - parseTime(b.time));
+  const parsedEvents = sorted.map(e => ({
+    ...e,
+    startMin: parseTime(e.time),
+    endMin: parseTime(e.endTime),
+  }));
 
-  const items: TimelineItem[] = [];
-  let cursor = 8 * 60; // Start at 8 AM
+  const slots: Slot[] = [];
+  let cursor = 8 * 60;
+  let slotIdx = 0;
 
-  for (const event of sorted) {
-    const start = parseTime(event.time);
-    const end = parseTime(event.endTime);
-
-    // Gap before this event = task slot
-    if (start > cursor) {
-      items.push({
-        type: "task-slot",
-        startMin: cursor,
-        endMin: start,
-        tasks: [],
-      });
+  for (const ev of parsedEvents) {
+    if (ev.startMin > cursor) {
+      slots.push({ id: `slot-${slotIdx++}`, startMin: cursor, endMin: ev.startMin });
     }
-
-    items.push({
-      type: "event",
-      startMin: start,
-      endMin: end,
-      event,
-    });
-
-    cursor = Math.max(cursor, end);
+    cursor = Math.max(cursor, ev.endMin);
   }
-
-  // Remaining time after last event
   if (cursor < 18 * 60) {
-    items.push({
-      type: "task-slot",
-      startMin: cursor,
-      endMin: 18 * 60,
-      tasks: [],
-    });
+    slots.push({ id: `slot-${slotIdx}`, startMin: cursor, endMin: 18 * 60 });
   }
 
-  // Distribute tasks into available slots (round-robin into gaps)
-  const slots = items.filter((i) => i.type === "task-slot");
-  tasks.forEach((task, idx) => {
-    if (slots.length > 0) {
-      const slot = slots[idx % slots.length];
-      if (!slot.tasks) slot.tasks = [];
-      slot.tasks.push(task);
-    }
-  });
-
-  return items;
+  return { events: parsedEvents, slots };
 }
 
 export default function TodayScreen({
@@ -123,10 +92,87 @@ export default function TodayScreen({
   const dateLabel = today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   const todayEvents = events.filter((e) => e.day === todayStr);
-  const incompleteTasks = tasks.filter((t) => !completedTasks.has(t.title));
-  const doneTasks = tasks.filter((t) => completedTasks.has(t.title));
+  const { events: parsedEvents, slots } = buildSlots(todayEvents);
+  const hasTimeline = todayEvents.length > 0;
 
-  const timeline = buildTimeline(todayEvents, incompleteTasks);
+  // Track task-to-slot assignment
+  const [taskSlots, setTaskSlots] = useState<Record<string, string>>({});
+
+  // Initialize task assignments on first render
+  useEffect(() => {
+    const incomp = tasks.filter(t => !completedTasks.has(t.title));
+    if (slots.length > 0 && incomp.length > 0) {
+      setTaskSlots(prev => {
+        const next = { ...prev };
+        let needsUpdate = false;
+        incomp.forEach((task, idx) => {
+          if (!next[task.title]) {
+            next[task.title] = slots[idx % slots.length].id;
+            needsUpdate = true;
+          }
+        });
+        return needsUpdate ? next : prev;
+      });
+    }
+  }, [tasks, slots, completedTasks]);
+
+  const getTasksForSlot = (slotId: string) => {
+    return tasks.filter(t => !completedTasks.has(t.title) && taskSlots[t.title] === slotId);
+  };
+
+  // Drag state
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<string | null>(null);
+
+  const handleDragStart = (taskTitle: string) => {
+    setDragging(taskTitle);
+  };
+
+  const handleDragEnd = () => {
+    setDragging(null);
+    setDragOver(null);
+  };
+
+  const handleDrop = useCallback((slotId: string) => {
+    if (dragging) {
+      setTaskSlots(prev => ({ ...prev, [dragging]: slotId }));
+    }
+    setDragging(null);
+    setDragOver(null);
+  }, [dragging]);
+
+  // Touch drag support
+  const touchTask = useRef<string | null>(null);
+  const touchStartY = useRef(0);
+  const [touchDragging, setTouchDragging] = useState(false);
+
+  const handleTouchStart = (taskTitle: string, e: React.TouchEvent) => {
+    touchTask.current = taskTitle;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchTask.current) return;
+    const diff = Math.abs(e.touches[0].clientY - touchStartY.current);
+    if (diff > 10) setTouchDragging(true);
+
+    // Find which slot we're over
+    const touch = e.touches[0];
+    const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
+    const slotEl = elements.find(el => el.getAttribute("data-slot-id"));
+    if (slotEl) {
+      setDragOver(slotEl.getAttribute("data-slot-id"));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchTask.current && dragOver && touchDragging) {
+      setTaskSlots(prev => ({ ...prev, [touchTask.current!]: dragOver }));
+    }
+    touchTask.current = null;
+    setTouchDragging(false);
+    setDragOver(null);
+  };
 
   const toggleComplete = (taskTitle: string) => {
     setCompletedTasks((prev) => {
@@ -142,9 +188,7 @@ export default function TodayScreen({
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = "en-US";
+    recognition.continuous = false; recognition.interimResults = false; recognition.lang = "en-US";
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
@@ -152,9 +196,7 @@ export default function TodayScreen({
     };
     recognition.onerror = () => { setIsListening(false); };
     recognition.onend = () => setIsListening(false);
-    recognition.start();
-    recognitionRef.current = recognition;
-    setIsListening(true);
+    recognition.start(); recognitionRef.current = recognition; setIsListening(true);
   };
 
   const addTask = async () => {
@@ -175,10 +217,25 @@ export default function TodayScreen({
     finally { setIsAdding(false); }
   };
 
-  const hasTimeline = todayEvents.length > 0;
+  const doneTasks = tasks.filter((t) => completedTasks.has(t.title));
+
+  // Build interleaved timeline: events + slots in time order
+  const timelineItems: { type: "event" | "slot"; startMin: number; endMin: number; event?: CalendarEvent & { startMin: number; endMin: number }; slot?: Slot }[] = [];
+  let eIdx = 0, sIdx = 0;
+  while (eIdx < parsedEvents.length || sIdx < slots.length) {
+    const ev = parsedEvents[eIdx];
+    const sl = slots[sIdx];
+    if (ev && (!sl || ev.startMin <= sl.startMin)) {
+      timelineItems.push({ type: "event", startMin: ev.startMin, endMin: ev.endMin, event: ev });
+      eIdx++;
+    } else if (sl) {
+      timelineItems.push({ type: "slot", startMin: sl.startMin, endMin: sl.endMin, slot: sl });
+      sIdx++;
+    }
+  }
 
   return (
-    <div className="animate-fade-up">
+    <div className="animate-fade-up" onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
       <h2 className="font-display text-2xl text-ink mb-1">Today</h2>
       <p className="font-mono-upper text-[0.5rem] text-ink/40 mb-6">{dateLabel}</p>
 
@@ -193,110 +250,126 @@ export default function TodayScreen({
         </div>
       )}
 
-      {/* Timeline view (when calendar events exist) */}
+      {/* Timeline */}
       {hasTimeline && (
         <div className="glass rounded-2xl p-5 mb-4">
           <div className="font-mono-upper text-[0.48rem] text-ink/30 mb-4">Your day</div>
-          <div className="space-y-0">
-            {timeline.map((item, i) => {
-              if (item.type === "event") {
+          <div className="space-y-1">
+            {timelineItems.map((item, i) => {
+              if (item.type === "event" && item.event) {
                 const durationMin = item.endMin - item.startMin;
-                const height = Math.max(48, durationMin * 0.8);
+                const height = Math.max(44, durationMin * 0.7);
                 return (
-                  <div key={`ev-${i}`} className="flex gap-3 mb-1">
-                    {/* Time column */}
-                    <div className="w-[52px] shrink-0 pt-2">
-                      <span className="font-mono text-[0.5rem] text-ink/30 tracking-wide">{item.event!.time}</span>
+                  <div key={`ev-${i}`} className="flex gap-3">
+                    <div className="w-[48px] shrink-0 pt-2.5">
+                      <span className="font-mono text-[0.48rem] text-ink/25 tracking-wide">{item.event.time}</span>
                     </div>
-                    {/* Event block */}
                     <div
-                      className="flex-1 rounded-xl px-4 py-3 border-l-[3px] border-l-blue"
-                      style={{
-                        minHeight: height,
-                        background: "var(--blue-pale)",
-                        opacity: 0.7,
-                      }}
+                      className="flex-1 rounded-lg px-3.5 py-2.5 border-l-[3px] border-l-blue"
+                      style={{ minHeight: height, background: "var(--blue-pale)", opacity: 0.65 }}
                     >
-                      <div className="text-[0.82rem] text-ink/70 leading-snug">{item.event!.title}</div>
-                      <div className="font-mono text-[0.45rem] text-ink/25 tracking-wide mt-1">
-                        {item.event!.time} - {item.event!.endTime}
+                      <div className="text-[0.8rem] text-ink/60 leading-snug">{item.event.title}</div>
+                      <div className="font-mono text-[0.42rem] text-ink/20 tracking-wide mt-0.5">
+                        {item.event.time} - {item.event.endTime}
                       </div>
                     </div>
                   </div>
                 );
               }
 
-              // Task slot
-              if (!item.tasks || item.tasks.length === 0) {
+              if (item.type === "slot" && item.slot) {
+                const slotTasks = getTasksForSlot(item.slot.id);
+                const isDropTarget = dragOver === item.slot.id;
                 const gapMin = item.endMin - item.startMin;
-                if (gapMin < 30) return null;
+
                 return (
-                  <div key={`gap-${i}`} className="flex gap-3 mb-1">
-                    <div className="w-[52px] shrink-0 pt-2">
-                      <span className="font-mono text-[0.5rem] text-ink/15 tracking-wide">{formatHour(item.startMin)}</span>
+                  <div
+                    key={item.slot.id}
+                    data-slot-id={item.slot.id}
+                    className={`flex gap-3 transition-all duration-150 ${isDropTarget ? "scale-[1.01]" : ""}`}
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(item.slot!.id); }}
+                    onDragLeave={() => setDragOver(null)}
+                    onDrop={(e) => { e.preventDefault(); handleDrop(item.slot!.id); }}
+                  >
+                    <div className="w-[48px] shrink-0 pt-2.5">
+                      <span className="font-mono text-[0.48rem] text-ink/15 tracking-wide">{formatHour(item.startMin)}</span>
                     </div>
-                    <div className="flex-1 py-3 px-4 rounded-xl border border-dashed border-ink/[0.06]">
-                      <span className="font-display italic text-[0.78rem] text-ink/15">Open time</span>
+                    <div
+                      className={`flex-1 rounded-lg py-1 min-h-[40px] transition-all duration-150 ${
+                        isDropTarget
+                          ? "bg-pink/[0.06] border border-dashed border-pink/20"
+                          : slotTasks.length === 0
+                          ? "border border-dashed border-ink/[0.05]"
+                          : ""
+                      }`}
+                      data-slot-id={item.slot.id}
+                    >
+                      {slotTasks.length === 0 && gapMin >= 30 && (
+                        <div className="flex items-center justify-center h-full py-3" data-slot-id={item.slot.id}>
+                          <span className="font-display italic text-[0.72rem] text-ink/12">
+                            {isDropTarget ? "Drop here" : "Open time"}
+                          </span>
+                        </div>
+                      )}
+                      {slotTasks.map((task) => (
+                        <div
+                          key={task.title}
+                          draggable
+                          onDragStart={() => handleDragStart(task.title)}
+                          onDragEnd={handleDragEnd}
+                          onTouchStart={(e) => handleTouchStart(task.title, e)}
+                          className={`flex items-start gap-2.5 py-2 px-3 rounded-lg cursor-grab active:cursor-grabbing transition-all ${
+                            dragging === task.title ? "opacity-40 scale-95" : "hover:bg-white/40"
+                          }`}
+                        >
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleComplete(task.title); }}
+                            className="w-[16px] h-[16px] rounded-md border-[1.5px] border-ink/15 mt-0.5 shrink-0 hover:border-ink/30 transition-colors"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[0.8rem] text-ink/75 leading-snug">{task.title}</div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <div className={`w-[4px] h-[4px] rounded-full ${typeDot[task.type] || "bg-ink/15"}`} />
+                              {task.aim && (
+                                <span className="font-mono text-[0.4rem] text-ink/20 tracking-wide">{task.aim}</span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Drag handle */}
+                          <div className="shrink-0 mt-1 text-ink/10">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                              <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
+                              <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
+                              <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
+                            </svg>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
               }
 
-              return (
-                <div key={`tasks-${i}`} className="flex gap-3 mb-1">
-                  <div className="w-[52px] shrink-0 pt-2.5">
-                    <span className="font-mono text-[0.5rem] text-ink/20 tracking-wide">{formatHour(item.startMin)}</span>
-                  </div>
-                  <div className="flex-1 space-y-1 py-1">
-                    {item.tasks.map((task, ti) => (
-                      <button
-                        key={ti}
-                        onClick={() => toggleComplete(task.title)}
-                        className="flex items-start gap-2.5 w-full text-left py-2 px-3 rounded-lg hover:bg-white/40 transition-colors"
-                      >
-                        <div className="w-[16px] h-[16px] rounded-md border-[1.5px] border-ink/15 mt-0.5 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[0.82rem] text-ink/80 leading-snug">{task.title}</div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <div className={`w-[4px] h-[4px] rounded-full ${typeDot[task.type] || "bg-ink/15"}`} />
-                            {task.aim && (
-                              <span className="font-mono text-[0.4rem] text-ink/20 tracking-wide">{task.aim}</span>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
+              return null;
             })}
           </div>
         </div>
       )}
 
-      {/* Fallback: simple task list when no calendar */}
-      {!hasTimeline && incompleteTasks.length > 0 && (
+      {/* Simple list fallback when no calendar */}
+      {!hasTimeline && tasks.filter(t => !completedTasks.has(t.title)).length > 0 && (
         <div className="glass rounded-2xl p-5 mb-4">
           <div className="font-mono-upper text-[0.48rem] text-ink/30 mb-3">To do</div>
           <div className="space-y-1">
-            {incompleteTasks.map((task, i) => (
-              <button
-                key={task.title + i}
-                onClick={() => toggleComplete(task.title)}
-                className="flex items-start gap-3 w-full text-left py-2.5 px-1 rounded-lg hover:bg-white/30 transition-colors"
-              >
+            {tasks.filter(t => !completedTasks.has(t.title)).map((task, i) => (
+              <button key={task.title + i} onClick={() => toggleComplete(task.title)} className="flex items-start gap-3 w-full text-left py-2.5 px-1 rounded-lg hover:bg-white/30 transition-colors">
                 <div className="w-[18px] h-[18px] rounded-md border-[1.5px] border-ink/15 mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-[0.88rem] text-ink/80 leading-snug">{task.title}</div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <div className={`w-[5px] h-[5px] rounded-full ${typeDot[task.type] || "bg-ink/15"}`} />
                     <span className="font-mono text-[0.42rem] text-ink/25 tracking-wide">{task.type}</span>
-                    {task.aim && (
-                      <>
-                        <span className="text-ink/10">&middot;</span>
-                        <span className="font-mono text-[0.42rem] text-ink/25 tracking-wide">{task.aim}</span>
-                      </>
-                    )}
+                    {task.aim && (<><span className="text-ink/10">&middot;</span><span className="font-mono text-[0.42rem] text-ink/25 tracking-wide">{task.aim}</span></>)}
                   </div>
                 </div>
               </button>
@@ -332,27 +405,10 @@ export default function TodayScreen({
 
       {/* Task entry with mic */}
       <div className="glass rounded-2xl p-3 flex items-center gap-2">
-        <input
-          type="text" value={input} onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addTask()}
-          placeholder="Add a task..."
-          className="flex-1 py-2.5 px-3 text-[0.85rem] text-ink bg-transparent outline-none font-body"
-        />
-        <button
-          onClick={toggleListening}
-          className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-all ${isListening ? "bg-pink text-white animate-pulse" : "bg-ink/[0.05] text-ink/30 hover:bg-ink/[0.1]"}`}
-        >
-          <MicIcon />
-        </button>
-        <button
-          onClick={addTask} disabled={!input.trim() || isAdding}
-          className="w-9 h-9 rounded-lg bg-ink text-white flex items-center justify-center shrink-0 transition-all disabled:opacity-20"
-        >
-          {isAdding ? (
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-          )}
+        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTask()} placeholder="Add a task..." className="flex-1 py-2.5 px-3 text-[0.85rem] text-ink bg-transparent outline-none font-body" />
+        <button onClick={toggleListening} className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-all ${isListening ? "bg-pink text-white animate-pulse" : "bg-ink/[0.05] text-ink/30 hover:bg-ink/[0.1]"}`}><MicIcon /></button>
+        <button onClick={addTask} disabled={!input.trim() || isAdding} className="w-9 h-9 rounded-lg bg-ink text-white flex items-center justify-center shrink-0 transition-all disabled:opacity-20">
+          {isAdding ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>}
         </button>
       </div>
     </div>
