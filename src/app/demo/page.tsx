@@ -4,6 +4,7 @@ import { useState } from "react";
 import CollageBackground from "@/components/CollageBackground";
 import BottomNav, { TabId } from "@/components/BottomNav";
 import { ParsedTask, CalendarEvent } from "@/components/Onboarding";
+import Onboarding from "@/components/Onboarding";
 import FocusScreen from "@/components/FocusScreen";
 import TodayScreen from "@/components/TodayScreen";
 import WeekScreen from "@/components/WeekScreen";
@@ -24,49 +25,11 @@ function getWeekDates() {
   return dates;
 }
 
-function buildDemoData() {
+function buildDemoEvents() {
   const dates = getWeekDates();
   const today = new Date().toISOString().split("T")[0];
   const todayIdx = dates.indexOf(today);
   const d = (offset: number) => dates[Math.max(0, Math.min(6, todayIdx + offset))];
-
-  const aims = ["Launch the course", "Grow newsletter to 2K", "Land 3 brand deals"];
-
-  const milestones: Record<string, string> = {
-    "Launch the course": "Sales page live, 3 modules filmed, email sequence written",
-    "Grow newsletter to 2K": "Post weekly, optimize signup page, 2 collabs",
-    "Land 3 brand deals": "Pitch 10 brands, media kit updated, 1 signed",
-  };
-
-  const tasks: ParsedTask[] = [
-    { title: "Film module 2 intro", day: d(0), aim: "Launch the course", type: "focus" },
-    { title: "Write this week's newsletter", day: d(0), aim: "Grow newsletter to 2K", type: "focus" },
-    { title: "Reply to brand pitch from Notion", day: d(0), aim: "Land 3 brand deals", type: "flow" },
-    { title: "Send overdue invoices", day: d(0), aim: null, type: "admin" },
-    { title: "Edit module 1 video", day: d(1), aim: "Launch the course", type: "focus" },
-    { title: "Design newsletter signup page", day: d(1), aim: "Grow newsletter to 2K", type: "flow" },
-    { title: "Prep for discovery call with Loom", day: d(1), aim: "Land 3 brand deals", type: "flow" },
-    { title: "Write course sales page copy", day: d(2), aim: "Launch the course", type: "focus" },
-    { title: "Instagram carousel - 5 tips post", day: d(2), aim: "Grow newsletter to 2K", type: "flow" },
-    { title: "Follow up with Canva partnership", day: d(2), aim: "Land 3 brand deals", type: "admin" },
-    { title: "Film module 3", day: d(3), aim: "Launch the course", type: "focus" },
-    { title: "Reach out to 3 newsletter collabs", day: d(3), aim: "Grow newsletter to 2K", type: "flow" },
-    { title: "Review sales page with mentor", day: d(4), aim: "Launch the course", type: "focus" },
-    { title: "Update media kit with new stats", day: d(4), aim: "Land 3 brand deals", type: "admin" },
-    // Past days
-    { title: "Outline module 2 content", day: d(-1), aim: "Launch the course", type: "focus" },
-    { title: "Schedule newsletter for this week", day: d(-1), aim: "Grow newsletter to 2K", type: "admin" },
-    { title: "Research brand deal rates", day: d(-2), aim: "Land 3 brand deals", type: "focus" },
-    { title: "Film module 1", day: d(-2), aim: "Launch the course", type: "focus" },
-  ];
-
-  // Pre-completed tasks (past days + some from earlier this week)
-  const completed = new Set([
-    "Outline module 2 content",
-    "Schedule newsletter for this week",
-    "Research brand deal rates",
-    "Film module 1",
-  ]);
 
   const events: CalendarEvent[] = [
     { title: "Content batching block", time: "9:00 AM", endTime: "11:30 AM", day: d(0) },
@@ -83,21 +46,38 @@ function buildDemoData() {
     { title: "Free afternoon", time: "1:00 PM", endTime: "5:00 PM", day: d(4) },
   ];
 
-  return { aims, milestones, tasks, events, completed };
+  return events;
 }
 
 export default function DemoPage() {
-  const demo = buildDemoData();
+  const [onboarded, setOnboarded] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("focus");
-  const [tasks, setTasks] = useState<ParsedTask[]>(demo.tasks);
-  const [aims] = useState(demo.aims);
-  const [milestones] = useState(demo.milestones);
-  const [events] = useState(demo.events);
+  const [tasks, setTasks] = useState<ParsedTask[]>([]);
+  const [aims, setAims] = useState<string[]>([]);
+  const [milestones, setMilestones] = useState<Record<string, string>>({});
+  const [events] = useState(buildDemoEvents);
   const [completedAims] = useState<Set<string>>(new Set());
-  const [completedTasks] = useState<Set<string>>(demo.completed);
+  const [completedTasks] = useState<Set<string>>(new Set());
   const [oneThing, setOneThing] = useState<ParsedTask | null>(null);
-  const [weekIntention, setWeekIntention] = useState("This is the week I finish module 2 and get the sales page up.");
+  const [weekIntention, setWeekIntention] = useState("");
   const [showReview, setShowReview] = useState(false);
+
+  if (!onboarded) {
+    return (
+      <main className="max-w-[430px] mx-auto min-h-screen relative overflow-hidden">
+        <CollageBackground />
+        <Onboarding
+          onComplete={(data) => {
+            setTasks(data.parsedTasks);
+            setAims(data.aims);
+            setMilestones(data.milestones);
+            setOnboarded(true);
+            setActiveTab("focus");
+          }}
+        />
+      </main>
+    );
+  }
 
   const today = new Date().toISOString().split("T")[0];
   const todayTasks = tasks.filter((t) => t.day === today);
@@ -157,7 +137,6 @@ export default function DemoPage() {
       </div>
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Weekly Review overlay */}
       {showReview && (
         <WeeklyReview
           tasks={tasks}
