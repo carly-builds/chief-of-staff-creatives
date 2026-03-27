@@ -67,6 +67,7 @@ export default function DemoPage() {
       <main className="max-w-[430px] mx-auto min-h-screen relative overflow-hidden">
         <CollageBackground />
         <Onboarding
+          skipCalendarStep
           onComplete={(data) => {
             setTasks(data.parsedTasks);
             setAims(data.aims);

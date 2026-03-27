@@ -29,7 +29,8 @@ export type OnboardingData = {
   calendarSkipped: boolean;
 };
 
-const totalSteps = 7;
+const STEPS_WITH_CALENDAR = 7;
+const STEPS_WITHOUT_CALENDAR = 6;
 
 const dayName = (dateStr: string) =>
   new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" });
@@ -42,11 +43,14 @@ const typeDot: Record<string, string> = {
 
 export default function Onboarding({
   onComplete,
+  skipCalendarStep = false,
 }: {
   onComplete: (data: OnboardingData) => void;
+  skipCalendarStep?: boolean;
 }) {
   const { setPalette } = usePalette();
   const [selectedPalette, setSelectedPalette] = useState<Palette>(defaultPalette);
+  const totalSteps = skipCalendarStep ? STEPS_WITHOUT_CALENDAR : STEPS_WITH_CALENDAR;
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>({
     aims: [],
@@ -62,8 +66,17 @@ export default function Onboarding({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
 
-  const next = () => setStep((s) => Math.min(s + 1, totalSteps + 1));
-  const back = () => setStep((s) => Math.max(s - 1, 1));
+  const next = () => setStep((s) => {
+    const nextStep = s + 1;
+    // Skip calendar step (6) in demo mode
+    if (skipCalendarStep && nextStep === 6) return 7;
+    return Math.min(nextStep, STEPS_WITH_CALENDAR + 1);
+  });
+  const back = () => setStep((s) => {
+    const prevStep = s - 1;
+    if (skipCalendarStep && prevStep === 6) return 5;
+    return Math.max(prevStep, 1);
+  });
 
   const addAim = () => {
     const trimmed = data.currentAimInput.trim();
