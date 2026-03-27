@@ -5,7 +5,12 @@ export async function POST(req: Request) {
   try {
     const { rawTasks, aims, milestones } = await req.json();
 
-    const client = new Anthropic();
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "ANTHROPIC_API_KEY not set", keyExists: false }, { status: 500 });
+    }
+
+    const client = new Anthropic({ apiKey });
 
     const today = new Date();
     const dayOfWeek = today.getDay();
