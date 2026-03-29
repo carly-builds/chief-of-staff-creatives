@@ -3,22 +3,22 @@
 @tailwind utilities;
 
 :root {
-  --pink: #c44f8a;
-  --pink-light: #d98aaf;
-  --blue: #d4a9a0;
-  --blue-light: #e2c4bd;
-  --blue-pale: #edd8d3;
-  --marble: #ebe6e2;
-  --ink: #1a1419;
+  --pink: #004dd8;
+  --pink-light: #92aaff;
+  --blue: #c0f44c;
+  --blue-light: #d4f07a;
+  --blue-pale: #e8f9b5;
+  --marble: #faf9f7;
+  --ink: #1a1c1b;
 
-  --surface-bg: #ebe6e2;
+  --surface-bg: #faf9f7;
   --surface-card: rgba(255, 255, 255, 0.75);
   --surface-card-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
-  --surface-text: #1a1419;
-  --surface-soft: rgba(26, 20, 25, 0.45);
-  --surface-faint: rgba(26, 20, 25, 0.18);
+  --surface-text: #1a1c1b;
+  --surface-soft: rgba(26, 28, 27, 0.45);
+  --surface-faint: rgba(26, 28, 27, 0.18);
   --surface-border: rgba(0, 0, 0, 0.04);
-  --nav-bg: #ebe6e2;
+  --nav-bg: #faf9f7;
   --nav-border: rgba(0, 0, 0, 0.04);
 }
 

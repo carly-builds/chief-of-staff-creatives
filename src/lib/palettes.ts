@@ -19,6 +19,21 @@ export type Palette = {
 
 export const palettes: Palette[] = [
   {
+    id: "stitch",
+    name: "Stitch",
+    bars: ["#004dd8", "#1a1c1b", "#c0f44c"],
+    vars: {
+      pink: "#004dd8",
+      "pink-light": "#92aaff",
+      blue: "#c0f44c",
+      "blue-light": "#d4f07a",
+      "blue-pale": "#e8f9b5",
+      marble: "#faf9f7",
+      ink: "#1a1c1b",
+    },
+    confetti: ["#004dd8", "#c0f44c", "#92aaff", "#d4f07a"],
+  },
+  {
     id: "melted-shake",
     name: "Melted Shake",
     bars: ["#d4a9a0", "#1a1419", "#c44f8a"],
